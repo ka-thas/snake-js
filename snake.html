@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <title>Snake 🐍</title>
+    <meta charset="UTF-8">
+    <style>
+    body {
+    background-color: rgb(54,57,63);
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+    }
+    #🎁 { 
+    position: relative;
+    width: 450px;
+    margin: auto;
+    }
+    #🖼 { 
+    background-color: rgb(32,34,37);
+    border-radius: 5px;
+    display: block;
+    margin: auto;
+    }
+    #meny {
+        display: initial;
+        background-color: rgb(47,49,54);
+        border-radius: 5px;
+        color: white;
+        width: 300px;
+        height: 100px;
+        padding: 30px;
+        position: absolute;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+    }
+    button {
+        padding: 10px;
+        color: white;
+        font-size: 22px;
+        background-color: rgb(58,60,67);
+        border-radius: 10px;
+        border-style: none;
+    }
+    </style>
+</head>
+<body>
+    <div id="meny">
+        <h1></h1>
+        <button>Start Game</button>
+    </div>
+    <div id="🎁">
+    <h1>S N A K E 🐍</h1>
+    <p>Bruk piltastene for å flytte slangen</p>
+    <canvas id="🖼" width="400" height="400">
+    Nettleseren din stotter ikke canvas-elementet
+    </canvas>
+    <p id="poeng">
+    score: 
+    </p>
+    <div>
+    <script>
+        let bodyEl = document.querySelector("body");
+        let poengEl = document.querySelector("#poeng");
+        let menyEl = document.querySelector("#meny")
+        let startEl = addEventListener("click", startSpill);
+        let canvas = document.querySelector("#🖼");
+        let ctx = canvas.getContext("2d");
+        let x; // x-koordinaten til slangens hode
+        let y; // y-koordinaten til slangens hode
+        let size = 20; // Storrelse slange og frukte i piksler
+        let maksLengde; // Storste lengden slangen kan ha
+        let vekst; // Hvor fort slangen skal vokse
+        let slange; // Array med alle slangeleddene
+        let frukt; // Array med frukt 
+        let poeng; // Tar vare på poengene
+        let retning; // Tar vare på retningen slangen beveger seg
+        let hastighet; // Hvor fort slangen skal bevege seg i ms
+        let timer; // Lytter på tiden
+
+        let topp = (window.innerHeight-166)/2;
+        let venstre = (window.innerWidth-366)/2;
+        menyEl.style.top = "200px";
+        menyEl.style.left = venstre + "px";
+
+
+        function startSpill() {
+            x = 0; // Startkoordinater til slangen
+            y = 0;
+            maksLengde = 3; // Startlengden til slangen
+            vekst = 1; // Hvor mange ledd slangen skal vokse med
+            slange = new Array (); //En array for slangeleddene
+            frukt = new Array () ; // En array for frukten
+            poeng = 0;
+            retning = 40; // Retning nedover (keyCode 40)
+            hastighet = 200; // Slangens hastighet (i ms)
+            // Hastigheten styrer spillets vanskelighetsgrad
+
+            menyEl.style.display = "none"
+            poengEl.innerHTML = "score: " + poeng;
+
+            //Legger til en keydown-hendelse på body-elementet
+            bodyEl.addEventListener ("keydown", byttRetning);
+
+            // TO DO: Legg til en timer
+            leggTilFrukt();
+            tegnOpp ();
+        }
+
+        function tegnOpp() {
+            ctx.clearRect(0, 0, 400, 400); // blanker ut canvaset
+            ctx.fillStyle = "rgb(89,101,243)";
+            ctx.fillRect (x, y, size-1, size-1);
+
+            // tegner alle slangeleddene
+            for(let i = 0; i < slange.length; i++) {
+                ctx.fillStyle = "rgb(89,101,243)"; // Kan bruke i i hsl-kode for at fargen skal endre seg gradvis
+                ctx.fillRect(slange[i].xPos, slange[i].yPos, size-1, size-1);
+            }
+
+            // tegner opp all frukten
+            for(let i = 0; i < frukt.length; i++) {
+                ctx.fillStyle = "rgb(238,66,69)";
+                ctx.fillRect (frukt[i].xPos,frukt[i].yPos, size-2, size-2);
+            }
+        }
+
+        function byttRetning(e) {
+            // TO DO: må hindre at slangen går tilbake inn i seg selv
+            // TO DO: endre til WASD
+            if (e.keyCode > 36 && e.keyCode < 41) {
+                clearInterval(timer); // fjerner timeren
+                timer = setInterval(flytt, hastighet); // setter en ny timer
+                retning = e.keyCode;
+                flytt();
+            }
+        }
+
+        function slangeHit(xPos, yPos) {
+            for (let i = 0; i < slange. length; i++) { // går gjennom alle slangeleddene
+                if (xPos == slange[i].xPos && yPos == slange[i].yPos) {// sjekk om hodet (xPos, yPos) treffer en del av slangen
+                return true; // koordinatene kolliderer med slangen
+                }
+            }
+            return false;
+        }
+
+        function leggTilFrukt() {
+            let ikkePlassert = true;
+            while (ikkePlassert) {
+                let fruktX = Math.floor(Math.random() * 20);
+                let fruktY = Math.floor(Math.random() * 20);
+                
+                fruktX = fruktX * size;
+                fruktY = fruktY * size;
+
+                // hvis frukten ligger oppå hodet eller frukten treffer slangekroppen
+                if (fruktX == x && fruktY == y || slangeHit(fruktX, fruktY)) {
+                // lokken må kjøres igjen
+                } else {
+                // opprett en ny frukt
+                let f = { xPos: fruktX, yPos: fruktY };
+                frukt.push(f); // legg frukten til arrayen
+                ikkePlassert = false;
+                }
+            }
+        }
+
+        function flytt() {
+            let slangeLedd = { xPos: x, yPos: y }; //oppretter et slangeledd der hodet var
+            slange.unshift(slangeLedd); // legg til slangeledd forst i arrayen
+            if (slange.length > maksLengde) { //hvis slangen er lengre en maks lengde
+                slange.pop(); // fjern det siste slangeleddet i arrayen
+            }
+
+            if (retning == 37) { // retningen er venstre
+                if (x - size >= 0) { // hvis det er plass til å gå til venstre
+                    x -= size; // reduser x-koordinaten med 20px
+                    tegnOpp();
+                }
+            } else if (retning == 39) { // retningen er hoyre
+                if (x + size < 400) { // hvis det er plass til å gå til hoyre
+                    x += size; // øk x-koordinaten med 20 px
+                    tegnOpp();
+                }
+            } else if (retning == 38) { // retningen er oppover
+                if (y - size >= 0) { // hvis det er plass til å gå oppover
+                    y -= size; // reduser y-koordinaten med 20px
+                    tegnOpp();
+                }
+            } else if (retning == 40) { // retningen er nedover
+                if (y + size < 400) { // hvis det er plass til å gå nedover
+                    y += size; //øk y-koordinaten med 20px
+                    tegnOpp();
+                }
+            }
+
+            // sjekk om koordinatene til hodet treffer koordinatene til kroppen
+            if (slangeHit (x, y)) {
+                gameOver() ; // hodet traff kroppen - avslutt spillet
+            }
+            // sjekk om hodet til slangen treffer frukten
+            // Hodet er alltid på punktet (x, y)
+            for (let i = 0; i < frukt.length; i++) {
+                if (x == frukt[i].xPos && y == frukt[i].yPos) {
+                    poeng += 100; // øk poengene
+                    poengEl.innerHTML = "Score: " + poeng; // oppdater poengvisningen
+                    maksLengde += vekst; // øk lengden til slangen
+                    if (hastighet > 80) hastighet = hastighet - 3; // øk hastigheten
+                    frukt.splice(i, 1); // fjern frukten
+                    leggTilFrukt (); // legg ut en ny frukt
+                }
+            }
+        }
+
+        function gameOver() {
+            bodyEl.removeEventListener("keydown",byttRetning); // fjerner keydown-hendelse på body-elementet
+            clearInterval (timer); //Fierner timeren
+            topp = (window.innerHeight-166)/2;
+            venstre = (window.innerWidth-366)/2;
+            menyEl.innerHTML = "<h1>GAME OVER</h1><button>Restart</button>";
+            menyEl.style.top = topp + "px";
+            menyEl.style.left = venstre + "px";
+            menyEl.style.display = "initial"
+            console.log ("Game over!");
+        }
+    </script>
+</body>
+</html>
